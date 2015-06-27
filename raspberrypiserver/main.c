@@ -16,13 +16,14 @@
 /*
  * based on http://stackoverflow.com/questions/19561941/socket-comunication-java-client-c-server
  */
-int main(int argc, char** argv) {
+int main( int argc, char *argv[] )
+{
     int sockfd, clisockfd, portno;
-    char * start = "hello";
-    char * end = "bye";
     socklen_t clilen;
     char buffer[256];
     char contentBuffer[255];
+    char password[255];
+    int passworded = 0; //0 = false, 1 = true;
     struct sockaddr_in serv_addr, cli_addr;
     int  n;
     //int optval;
@@ -37,7 +38,19 @@ int main(int argc, char** argv) {
 
     /* Initialize socket structure */
     bzero((char *) &serv_addr, sizeof(serv_addr));
-    portno = 5000;
+    
+    printf("What port number do you want to host on? ");    
+    scanf("%d", &portno);    
+    
+    printf("\nDo you want a password? (y/n)");
+    char answer[1];
+    scanf("%s", &answer);
+    if(strncmp(answer, "y", 1) == 0) {
+        passworded = 1;
+        printf("\nWhat shall be your password? ");
+        scanf("%s", password);        
+    }
+    
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_addr.s_addr = INADDR_ANY;
     serv_addr.sin_port = htons(portno);
@@ -59,8 +72,26 @@ int main(int argc, char** argv) {
         perror("ERROR on accept");
         return(1);
     }
-
-    while (strcmp(end, contentBuffer) !=0)
+    
+    char question[255] = "What's the password?\n";
+    while(passworded != 0) {
+        bzero(buffer,256);
+        bzero(contentBuffer,255);        
+        
+        write(clisockfd, question, strlen(question));
+        read( clisockfd,buffer,255 );
+        
+        if(strncmp(buffer, password, strlen(password)) == 0) {
+            passworded = 0;
+            printf("Clear!\n");
+        } 
+        else {
+            strcpy(question, "Wrong password, try again!\n");
+        }
+    }
+    
+    write(clisockfd, "You're in!\n", 12);
+    while (1)
     {
         bzero(buffer,256);
         bzero(contentBuffer,255);
@@ -79,5 +110,6 @@ int main(int argc, char** argv) {
     }
     close(sockfd);
     return 0;
-}
 
+
+}
