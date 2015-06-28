@@ -74,7 +74,8 @@ int main(int argc, char *argv[])
    pinMode(pinButton, INPUT);
    pinMode(pinLed, OUTPUT);
    digitalWrite(pinLed, LOW);
-
+   printf("\nPins set, press enter to continue..");
+   getchar();
    int portno, n;
    struct sockaddr_in serv_addr;
    struct hostent *server;
