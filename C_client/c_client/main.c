@@ -20,14 +20,17 @@ const int pinButton = 4;
 void *threadFuncButton(void *arg) {
  int state = 0;
  int n;
+ int delay = 10000;
  while(sockfd != 0) {
 	if(state == 0 && digitalRead(pinButton) == 0) {
 		state = 1;
 		n = write(sockfd, "a\n", 2);
+		usleep(delay);
 	}
 	else if(state == 1 && digitalRead(pinButton) == 1) {
 		state = 0;
 		n = write(sockfd, "b\n", 2);
+		usleep(delay);
 	}
 
         if (n < 0)
@@ -50,8 +53,7 @@ void *threadFunc(void *arg) {
         if (n < 0) {
             perror("ERROR reading from socket");
             exit(1);
-        }        
-        printf("Server said:%s", input);
+        }
 	if((strncmp(input, "KNOP IS AAN", 11))==0) {
 		digitalWrite(pinLed, HIGH);
 	}
@@ -120,9 +122,8 @@ int main(int argc, char *argv[])
    pthread_t pth_button;
    pthread_create(&pth_button, NULL, threadFuncButton, "dummydata");
    write(sockfd, "ab\n", 3);
-   printf("Press any key to exit...");
-   char exit[255];
-   scanf("%s", exit);
+   printf("\nPress any key to exit...");
+   getchar();
    printf("Closing...\n");
    write(sockfd, "b\n", 2);
    close(sockfd);
