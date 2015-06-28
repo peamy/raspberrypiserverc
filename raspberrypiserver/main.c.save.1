@@ -33,7 +33,6 @@ void *threadFunc(void *arg) {
     while(1) {
    	 bzero(input, 256);
   	 n = read(clisockfd, input, 255);
-	printf("\x1B[\x1B[0K");
 	printf("Client says: %s\n", input);
 
 	if(strncmp(input,"stop",4)==0) {
@@ -141,7 +140,7 @@ int main( int argc, char *argv[] )
             printf("Clear!\n");
         } 
         else {
-	    printf("Client had wrong pass!");
+	    printf("Wrong pass guessed!\n");
             strcpy(question, "Wrong password, try again!\n");
         }
     }
@@ -156,10 +155,11 @@ int main( int argc, char *argv[] )
         bzero(buffer,256);
         
 	printf("Input?: ");
-	scanf("%s", buffer);
-	printf("input was: %s\n", buffer);
+	scanf("%s", &buffer);
+	printf("input was: %s", buffer);
+	
+
 	write(clisockfd, buffer, strlen(buffer)); 
-	write(clisockfd, "!\n", 2);
 
         if (n < 0)
         {
