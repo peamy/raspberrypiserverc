@@ -24,8 +24,8 @@ public class Test_for_c_server {
     public static void main(String[] args) {
         
         try {        
-            String hostName = "127.0.0.1";
-            int portNumber = 5000;
+            String hostName = "192.168.1.200"; // pi: 192.168.1.102, 
+            int portNumber = 1000;
             Socket firstSocket = new Socket(hostName, portNumber);
             PrintWriter out = new PrintWriter(firstSocket.getOutputStream(), true);
             BufferedReader in = new BufferedReader(new InputStreamReader(firstSocket.getInputStream()));
@@ -33,11 +33,30 @@ public class Test_for_c_server {
             String userInput;
             String input;
             
-            while ((input = in.readLine()) != null) 
-            {
-                System.out.println("Server says: " + input); 
-                userInput = stdIn.readLine();
-                out.println(userInput);  
+            Thread thread = new Thread() {
+                public void run() {
+                    String input;
+                    try {
+                        while((input = in.readLine()) != null) {
+                            System.out.println("Server says: " + input);
+                        }    
+                    }
+                    catch(IOException ex) {
+                        
+                    }                    
+                }                
+            };thread.start();
+            
+            while ((input = stdIn.readLine()) != null) 
+            {                
+                System.out.println("You said: " + input);
+                out.println(input);
+                if(input.equals("SPAM")) {
+                    for(int i = 0; i<9999; i++) {
+                        out.println("SPAM!!!" + i);
+                    }
+                    System.out.println("Spam don.");
+                }
             }
             in.close();
             stdIn.close();
