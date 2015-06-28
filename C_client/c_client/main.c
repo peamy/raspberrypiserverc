@@ -11,33 +11,83 @@
 #include <netinet/in.h>
 #include <string.h>
 #include <pthread.h>
+#include <wiringPi.h>
 
 int sockfd;
+const int pinLed = 3;
+const int pinButton = 4;
+
+void *threadFuncButton(void *arg) {
+ int state = 0;
+ int n;
+ while(sockfd != 0) {
+	if(state == 0 && digitalRead(pinButton) == 0) {
+		state = 1;
+		n = write(sockfd, "a\n", 2);
+	}
+	else if(state == 1 && digitalRead(pinButton) == 1) {
+		state = 0;
+		n = write(sockfd, "b\n", 2);
+	}
+
+        if (n < 0)
+        {
+           perror("ERROR writing to socket");
+           exit(1);
+        }
+   }
+   digitalWrite(pinLed, LOW);
+   return;
+
+}
 
 void *threadFunc(void *arg) {
     char input[256];
     int n;
-    while(1) {
+    while(sockfd != 0) {
         bzero(input, 256);
         n = read(sockfd, input, 255);
-        if (n < 0) {           
+        if (n < 0) {
             perror("ERROR reading from socket");
             exit(1);
         }        
         printf("Server said:%s", input);
+	if((strncmp(input, "KNOP IS AAN", 11))==0) {
+		digitalWrite(pinLed, HIGH);
+	}
+	else if((strncmp(input, "KNOP IS UIT", 11))==0) {
+		digitalWrite(pinLed, LOW);
+	}
+
     }
+    digitalWrite(pinLed, LOW);
     return;
 }
 
 int main(int argc, char *argv[])
 {
+
+   int state = 0;
+   wiringPiSetupGpio();
+   pinMode(pinButton, INPUT);
+   pinMode(pinLed, OUTPUT);
+   digitalWrite(pinLed, LOW);
+
    int portno, n;
    struct sockaddr_in serv_addr;
    struct hostent *server;
-   
-   char buffer[256];
-   
-   portno = 1000;
+
+   if (argc < 2){
+     printf("Ip required!\n");
+     return 0;
+   }
+
+   if (argc >= 3){
+      portno = atoi(argv[2]);
+   } 
+   else
+   { portno = 1000;}
+   printf("Trying to connect to %s:%d", argv[1], portno);
    /* Create a socket point */
    sockfd = socket(AF_INET, SOCK_STREAM, 0);
    
@@ -46,7 +96,7 @@ int main(int argc, char *argv[])
       perror("ERROR opening socket");
       exit(1);
    }
-   server = gethostbyname("192.168.1.200");
+   server = gethostbyname(argv[1]);
    
    if (server == NULL) {
       fprintf(stderr,"ERROR, no such host\n");
@@ -66,23 +116,19 @@ int main(int argc, char *argv[])
    }
    
    pthread_t pth;
-   
    pthread_create(&pth, NULL, threadFunc, "dummydata");
+   pthread_t pth_button;
+   pthread_create(&pth_button, NULL, threadFuncButton, "dummydata");
+   write(sockfd, "ab\n", 3);
+   printf("Press any key to exit...");
+   char exit[255];
+   scanf("%s", exit);
+   printf("Closing...\n");
+   write(sockfd, "b\n", 2);
+   close(sockfd);
+   sockfd = 0;
    
-   while(1) {        
-        bzero(buffer,256);
-        fgets(buffer,255,stdin);
-
-        /* Send message to the server */
-        n = write(sockfd, buffer, strlen(buffer));
-        printf("You said: %s", buffer);
-
-        if (n < 0)
-        {
-           perror("ERROR writing to socket");
-           exit(1);
-        }
-   }   
+   digitalWrite(pinLed, LOW);
    return 0;
 }
 
