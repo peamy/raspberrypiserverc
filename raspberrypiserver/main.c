@@ -100,13 +100,19 @@ int main( int argc, char *argv[] )
         
         printf("I got : %s\n", buffer);
         
-        write(clisockfd, buffer, strlen(buffer));
+	if(strncmp(buffer,"stop",4)==0) {
+		return 0;
+	}
+
+	write(clisockfd, "(This is a test) ", 17);
+        write(clisockfd, "I got your message, thanks!\n",28 );
         
         if (n < 0)
         {
             perror("ERROR reading from socket");
             return(1);        
         }
+
     }
     close(sockfd);
     return 0;
